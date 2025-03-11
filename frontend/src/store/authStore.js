@@ -30,10 +30,10 @@ export const useAuthStore = create((set) => ({
   },
 
   // Verify OTP for registration
-  verifyOtp: async (rollNumber, otp) => {
+  verifyOtp: async (rollNumber, otp, metamaskKey) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axios.post(`${API_URL}/verify-otp`, { rollNumber, otp });
+      const response = await axios.post(`${API_URL}/verify-otp`, { rollNumber, otp, metamaskKey });
       
       // Store token in localStorage for persistence
       if (response.data.token) {
@@ -51,6 +51,7 @@ export const useAuthStore = create((set) => ({
       const errorMessage = error.response?.data?.message || "Invalid OTP";
       set({ error: errorMessage, isLoading: false });
       toast.error(errorMessage);
+      console.log(error);
       throw error;
     }
   },

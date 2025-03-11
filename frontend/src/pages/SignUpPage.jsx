@@ -4,6 +4,7 @@ import { IdCard, Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/Input";
 import { useAuthStore } from "../store/authStore";
+import Web3 from "web3";
 
 const SignUpPage = () => {
 	const [rollNumber, setRollNumber] = useState("");
@@ -25,12 +26,27 @@ const SignUpPage = () => {
 		
 		setError("");
 		try {
+			// Check if MetaMask is installed
+			if (!window.ethereum) {
+				setError("MetaMask is not installed!");
+				return;
+			}
+	
+			const web3 = new Web3(window.ethereum);
+	
+			// Request user's Ethereum address
+			const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+			const metamask = accounts[0];  // First account in MetaMask
+	
+			console.log("User's MetaMask Address:", metamask);
+
 			const response = await sendOtp(rollNumber);
 			// Navigate to OTP verification page with roll number and masked phone
 			navigate('/verify-otp', { 
 				state: { 
 					rollNumber: rollNumber,
-					phone: response.phone // Masked phone from API response
+					phone: response.phone, // Masked phone from API response
+					metamaskKey: metamask
 				}
 			});
 		} catch (err) {

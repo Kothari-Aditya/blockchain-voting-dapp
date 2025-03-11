@@ -5,6 +5,7 @@ import {
     sendOtp,
     verifyOtp,
     checkAuth,
+    vote,
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 
@@ -16,5 +17,6 @@ router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
 router.post("/login", login);
 router.post("/logout", logout);
+router.post("/vote", vote);
 
 export default router;
