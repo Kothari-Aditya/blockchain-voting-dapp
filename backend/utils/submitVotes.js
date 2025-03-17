@@ -6,7 +6,7 @@ const N = 1; // Number of votes before submission
 
 // Create an ethers.js contract instance
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:7545"); // Ganache RPC URL
-const wallet = new ethers.Wallet("0xbbdc30d314b5f255d762a3c35dfbbea6bd58f92a4f03da26a661babbb9285798", provider); // Replace with private key
+const wallet = new ethers.Wallet("0xcdeb7cc84d42a691bac60eefbbd79c0571c01022ec6f2f05268d0988efd5e838", provider); // Replace with private key
 const contract = new ethers.Contract(contractAddress, contractABI, wallet);
 
 // console.log("Listening for VoteSubmitted events...");
@@ -20,14 +20,19 @@ const contract = new ethers.Contract(contractAddress, contractABI, wallet);
 export const checkAndSubmitVotes = async () => {
     try {
         const votes = await Vote.find(); // Get all stored votes
+        console.log("Fetched votes from DB:", votes);
 
-        if (votes.length >= N) {
+        // Filter out invalid votes
+        const validVotes = votes.filter(v => v.voter && v.partyId && v.signature);
+        console.log("Valid votes only:", validVotes);
+
+        if (validVotes.length >= N) {
             console.log("Threshold reached, submitting votes...");
 
-            const voteData = votes.map(v => ({
-                voter: v.voter,
+            const voteData = validVotes.map(v => ({
+                voter: ethers.getAddress(v.voter), // Ensures a valid Ethereum address
                 partyID: v.partyId,
-                signature: v.signature
+                signature: ethers.getBytes(v.signature)
             }));
 
             console.log("Vote Data:", voteData);

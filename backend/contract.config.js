@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-export const contractAddress = "0xc34Aa17351dcDA7c612fF0BbCEFbE9f575648CeF"; // Replace with your deployed contract address
+export const contractAddress = "0x1775e48eED7eF01CDC1aeC361A9c70b0F112a81F"; // Replace with your deployed contract address
 export const contractABI = [
     {
         "inputs": [],
@@ -44,7 +44,8 @@ export const contractABI = [
             }
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [],
@@ -57,7 +58,8 @@ export const contractABI = [
             }
         ],
         "stateMutability": "view",
-        "type": "function"
+        "type": "function",
+        "constant": true
     },
     {
         "inputs": [
