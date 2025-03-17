@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-export const contractAddress = "0x9aA57c988FCf3256E6634Ed70c80c189ce24E7f3"; // Replace with your deployed contract address
+export const contractAddress = "0xc34Aa17351dcDA7c612fF0BbCEFbE9f575648CeF"; // Replace with your deployed contract address
 export const contractABI = [
     {
         "inputs": [],
@@ -12,7 +12,7 @@ export const contractABI = [
         "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "address",
                 "name": "voter",
                 "type": "address"

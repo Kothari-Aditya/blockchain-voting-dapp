@@ -9,7 +9,7 @@ contract VotingContract {
     }
 
     mapping(address => bool) public hasVoted;
-    event VoteSubmitted(address indexed voter, uint256 partyID);
+    event VoteSubmitted(address voter, uint256 partyID);
     address public owner;
 
     constructor() {
@@ -17,7 +17,6 @@ contract VotingContract {
     }
 
     function submitVotes(Vote[] memory votes) public {
-        require(votes.length == 5, "Exactly 5 votes required");
 
         for (uint256 i = 0; i < votes.length; i++) {
             require(!hasVoted[votes[i].voter], "Already voted");
@@ -31,8 +30,10 @@ contract VotingContract {
 
             hasVoted[votes[i].voter] = true;
 
+            // uint256 partyId = votes[i].partyID;
+
             // Emit vote event
-            emit VoteSubmitted(votes[i].voter, votes[i].partyID);
+            emit VoteSubmitted(signer, votes[i].partyID);
         }
     }
 

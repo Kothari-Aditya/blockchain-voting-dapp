@@ -22,7 +22,8 @@ const DashboardPage = () => {
   };
 
   const handleVote = async () => {
-    if (!selectedPartyId) {
+    
+    if (!selectedPartyId) {      
       alert("Please select a party to vote!");
       return;
     }
@@ -31,26 +32,24 @@ const DashboardPage = () => {
       return;
     }
 
-    try {
+    try {      
       const web3 = new Web3(window.ethereum);
       const accounts = await web3.eth.requestAccounts(); // Get user account
-      const voterAddress = accounts[0];
+      const voterAddress = accounts[0];      
 
       // Correctly hash the message
       const messageHash = web3.utils.soliditySha3(
-        voterAddress,
-        selectedPartyId
+        { t: "address", v: voterAddress },
+        { t: "uint256", v: selectedPartyId }
       );
-
-      // Apply Ethereum message prefix (to match Solidity's prefixed function)
-      const ethSignedMessageHash = web3.eth.accounts.hashMessage(messageHash);
-
+      console.log(messageHash);
+            
       // Sign the prefixed message
       const signature = await web3.eth.personal.sign(
-        ethSignedMessageHash,
+        messageHash,
         voterAddress,
         ""
-      );
+      );      
 
       console.log("Vote signed:", {
         voter: voterAddress,
@@ -75,7 +74,7 @@ const DashboardPage = () => {
       } else {
         alert(`Vote failed: ${data.error}`);
       }
-    } catch (error) {
+    }catch (error) {
       console.error("Error signing vote:", error);
       alert("Failed to sign vote. Check console for details.");
     }

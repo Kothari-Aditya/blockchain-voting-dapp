@@ -2,12 +2,20 @@ import { ethers } from "ethers";
 import { contractAddress, contractABI } from "../contract.config.js"; // Import contract details
 import { Vote } from "../models/vote.model.js"; // MongoDB model
 
-const N = 5; // Number of votes before submission
+const N = 1; // Number of votes before submission
 
 // Create an ethers.js contract instance
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:7545"); // Ganache RPC URL
-const wallet = new ethers.Wallet("0xa483c119781967918b902d7786d7eb7c215eaa8d897c3ed45631fc85fd296ac3", provider); // Replace with private key
+const wallet = new ethers.Wallet("0xbbdc30d314b5f255d762a3c35dfbbea6bd58f92a4f03da26a661babbb9285798", provider); // Replace with private key
 const contract = new ethers.Contract(contractAddress, contractABI, wallet);
+
+// console.log("Listening for VoteSubmitted events...");
+
+// contract.on("VoteSubmitted", (voter, partyID, event) => {
+//     console.log(`VoteSubmitted Event: Voter ${voter} voted for Party ${partyID}`);
+//     console.log("🔗 Transaction Hash:", event.transactionHash);
+
+// });
 
 export const checkAndSubmitVotes = async () => {
     try {
@@ -22,11 +30,13 @@ export const checkAndSubmitVotes = async () => {
                 signature: v.signature
             }));
 
-            console.log(voteData);
-            
+            console.log("Vote Data:", voteData);
+
             // Send transaction to the smart contract
-            const tx = await contract.submitVotes(voteData);
-            await tx.wait();
+            const tx = await contract.submitVotes(voteData, { gasLimit: 500000 });
+            const receipt = await tx.wait();
+
+            console.log("Votes submitted successfully!\n Receipt: ", receipt);
 
             console.log("Votes submitted successfully:", tx.hash);
 

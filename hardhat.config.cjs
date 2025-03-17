@@ -6,7 +6,7 @@ module.exports = {
   networks: {
     ganache: {
       url: "http://127.0.0.1:7545", // Ganache RPC URL
-      accounts: ["0xa483c119781967918b902d7786d7eb7c215eaa8d897c3ed45631fc85fd296ac3"], // Replace with your Ganache account private key
+      accounts: ["0xbbdc30d314b5f255d762a3c35dfbbea6bd58f92a4f03da26a661babbb9285798"], // Replace with your Ganache account private key
     },
   },
 };
