@@ -11,6 +11,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useEffect } from "react";
+import EventsPage from "./pages/EventList";
 
 // protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -83,6 +84,7 @@ function App() {
 					}
 				/>
 				<Route path='/verify-otp' element={<OTPVerificationPage />} />
+				<Route path='/events' element={<EventsPage />} />
 				
 				{/* catch all routes */}
 				<Route path='*' element={<Navigate to='/' replace />} />

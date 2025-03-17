@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
 import { useState } from "react";
 import { formatDate } from "../utils/date";
+import { useNavigate } from "react-router-dom";
 import Web3 from "web3";
 
 const parties = [
@@ -16,6 +17,7 @@ const parties = [
 const DashboardPage = () => {
   const { user, logout } = useAuthStore();
   const [selectedPartyId, setSelectedPartyId] = useState(null);
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
@@ -154,6 +156,23 @@ const DashboardPage = () => {
         </motion.div>
       </div>
 
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="mt-4"
+      >
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => navigate("/events")}
+          className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white 
+				font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700
+				 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+        >
+          Event List
+        </motion.button>
+      </motion.div>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

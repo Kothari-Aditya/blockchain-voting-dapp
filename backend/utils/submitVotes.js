@@ -2,7 +2,7 @@ import { ethers } from "ethers";
 import { contractAddress, contractABI } from "../contract.config.js"; // Import contract details
 import { Vote } from "../models/vote.model.js"; // MongoDB model
 
-const N = 1; // Number of votes before submission
+const N = 5; // Number of votes before submission
 
 // Create an ethers.js contract instance
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:7545"); // Ganache RPC URL

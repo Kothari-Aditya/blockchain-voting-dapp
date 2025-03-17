@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-export const contractAddress = "0x1775e48eED7eF01CDC1aeC361A9c70b0F112a81F"; // Replace with your deployed contract address
+export const contractAddress = "0xbB4110716596456385b9e3Bf4B80a85b26C073F2"; // Replace with your deployed contract address
 export const contractABI = [
     {
         "inputs": [],

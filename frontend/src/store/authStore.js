@@ -88,6 +88,7 @@ export const useAuthStore = create((set) => ({
       await axios.post(`${API_URL}/logout`);
       // Clear token from localStorage
       localStorage.removeItem('auth_token');
+      localStorage.removeItem("processedTxs");
       set({ user: null, isAuthenticated: false, isLoading: false });
       toast.success("Logged out successfully");
     } catch (error) {
