@@ -1,12 +1,31 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-export const contractAddress = "0xbB4110716596456385b9e3Bf4B80a85b26C073F2"; // Replace with your deployed contract address
+export const contractAddress = "0xba45530d73c864C58c1AD5E3601b835fA3422DaD"; // Replace with your deployed contract address
 export const contractABI = [
     {
         "inputs": [],
         "stateMutability": "nonpayable",
         "type": "constructor"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "voter",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "string",
+                "name": "reason",
+                "type": "string"
+            }
+        ],
+        "name": "VoteSkipped",
+        "type": "event"
     },
     {
         "anonymous": false,

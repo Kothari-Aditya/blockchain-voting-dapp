@@ -7,6 +7,8 @@ const EventsPage = () => {
   const [events, setEvents] = useState([]);
   const [contract, setContract] = useState(null);
   const [voteCounts, setVoteCounts] = useState({});
+  const [searchQuery, setSearchQuery] = useState(""); // 🔍 Search state
+  const [userAddress, setUserAddress] = useState("");
   const navigate = useNavigate();
 
   // Load processed transactions from local storage
@@ -15,12 +17,30 @@ const EventsPage = () => {
     return storedTxs ? new Set(JSON.parse(storedTxs)) : new Set();
   };
 
+  const loadVoteCounts = () => {
+    const storedCounts = localStorage.getItem("voteCounts");
+    return storedCounts ? JSON.parse(storedCounts) : {};
+  };
+
   const [processedTxs, setProcessedTxs] = useState(loadProcessedTxs());
+
+  useEffect(() => {
+    const getAccount = async () => {
+      if (window.ethereum) {
+        const accounts = await window.ethereum.request({
+          method: "eth_accounts",
+        });
+        if (accounts.length > 0) {
+          setUserAddress(accounts[0].toLowerCase()); // Store in lowercase for case-insensitive comparison
+        }
+      }
+    };
+    getAccount();
+  }, []);
 
   useEffect(() => {
     const fetchContract = async () => {
       try {
-        console.log("Fetching contract details...");
         const response = await fetch("http://localhost:5000/api/auth/contract");
         const data = await response.json();
 
@@ -35,7 +55,6 @@ const EventsPage = () => {
           provider
         );
 
-        console.log("Contract loaded:", contractInstance);
         setContract(contractInstance);
       } catch (error) {
         console.error("Error fetching contract:", error);
@@ -46,11 +65,10 @@ const EventsPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!contract || events.length > 0) return; // Prevent duplicate fetching
+    if (!contract) return;
 
     const fetchPastEvents = async () => {
       try {
-        console.log("Fetching past vote events...");
         const filter = contract.filters.VoteSubmitted();
         const logs = await contract.runner.provider.getLogs({
           fromBlock: 0,
@@ -58,17 +76,20 @@ const EventsPage = () => {
           address: contract.target,
           topics: filter.topics,
         });
-        console.log("Fetched logs:", logs);
 
         const parsedLogs = logs
           .map((log) => {
             try {
               const decodedLog = contract.interface.parseLog(log);
-              return {
-                voter: decodedLog.args[0],
-                partyID: decodedLog.args[1].toString(),
-                txHash: log.transactionHash,
-              };
+              // ✅ Only include VoteSubmitted events
+              if (decodedLog.name === "VoteSubmitted") {
+                return {
+                  voter: decodedLog.args[0],
+                  partyID: decodedLog.args[1].toString(),
+                  txHash: log.transactionHash,
+                };
+              }
+              return null; // Ignore non-matching events
             } catch (error) {
               console.error("Error decoding log:", error);
               return null;
@@ -76,7 +97,6 @@ const EventsPage = () => {
           })
           .filter((event) => event !== null);
 
-        console.log("Parsed events:", parsedLogs);
         updateVoteCounts(parsedLogs);
         setEvents(parsedLogs);
       } catch (error) {
@@ -84,13 +104,10 @@ const EventsPage = () => {
       }
     };
 
-    const handleVoteSubmitted = (voter, partyID, event) => {
-      console.log("New vote event detected:", {
-        voter,
-        partyID,
-        txHash: event.transactionHash,
-      });
+    fetchPastEvents();
+    setVoteCounts(loadVoteCounts());
 
+    const handleVoteSubmitted = (voter, partyID, event) => {
       const newEvent = {
         voter,
         partyID: partyID.toString(),
@@ -101,7 +118,7 @@ const EventsPage = () => {
         if (!prevTxs.has(newEvent.txHash)) {
           const updatedTxs = new Set([...prevTxs, newEvent.txHash]);
           localStorage.setItem("processedTxs", JSON.stringify([...updatedTxs]));
-          updateVoteCounts([newEvent]); // Ensure vote counts update only for new transactions
+          updateVoteCounts([newEvent]);
           setEvents((prevEvents) => [newEvent, ...prevEvents]);
           return updatedTxs;
         }
@@ -109,32 +126,30 @@ const EventsPage = () => {
       });
     };
 
-    fetchPastEvents();
     contract.on("VoteSubmitted", handleVoteSubmitted);
 
     return () => {
       contract.off("VoteSubmitted", handleVoteSubmitted);
     };
-  }, [contract, events.length]);
+  }, [contract]);
 
   const updateVoteCounts = (newEvents) => {
     setProcessedTxs((prevTxs) => {
       const updatedTxs = new Set([...prevTxs]);
-      console.log("UpdatedTxs:", updatedTxs);
 
       setVoteCounts((prevCounts) => {
         const updatedCounts = { ...prevCounts };
-        console.log("UpdatedCounts:", updatedCounts);
 
-        newEvents.forEach(({ partyID, txHash }) => {
-          console.log("lemme see:", partyID, txHash);
-          if (!updatedTxs.has(txHash)) {
+        newEvents.forEach(({ partyID, txHash, voter }) => {
+          const uniqueVoteKey = `${txHash}-${voter}`;
+
+          if (!updatedTxs.has(uniqueVoteKey)) {
             updatedCounts[partyID] = (updatedCounts[partyID] || 0) + 1;
-            updatedTxs.add(txHash);
+            updatedTxs.add(uniqueVoteKey);
           }
         });
 
-        console.log("Updated vote counts:", updatedCounts);
+        localStorage.setItem("voteCounts", JSON.stringify(updatedCounts));
         return updatedCounts;
       });
 
@@ -145,6 +160,23 @@ const EventsPage = () => {
 
   const maskVoter = (voter) => {
     return `${voter.slice(0, 6)}...${voter.slice(-4)}`;
+  };
+
+  const filteredEvents = events.filter(
+    (event) =>
+      maskVoter(event.voter)
+        .toUpperCase()
+        .includes(searchQuery.toUpperCase()) ||
+      event.partyID.toUpperCase().includes(searchQuery.toUpperCase())
+  );
+
+  const partyNames = {
+    1: "Bharatiya Janata Party",
+    2: "Indian National Congress",
+    3: "Aam Aadmi Party",
+    4: "Bahujan Samaj Party",
+    5: "Communist Party of India",
+    6: "National People's Party",
   };
 
   return (
@@ -166,6 +198,15 @@ const EventsPage = () => {
         ⬅ Back to Home
       </button>
 
+      {/* 🔍 Search Bar */}
+      <input
+        type="text"
+        placeholder="Search by voter"
+        className="mt-4 w-full p-2 bg-gray-800 text-white border border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 outline-none"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+      />
+
       <div className="mt-6 space-y-4">
         <motion.div
           className="p-6 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
@@ -174,13 +215,22 @@ const EventsPage = () => {
           transition={{ delay: 0.2 }}
         >
           <ul className="space-y-3">
-            {events.map((event, index) => (
-              <li key={index} className="text-white">
-                <strong>Voter:</strong> {maskVoter(event.voter)} <br />
-                <strong>Party ID:</strong> {event.partyID} <br />
-                <strong>Transaction:</strong> {event.txHash.slice(0, 10)}...
-              </li>
-            ))}
+            {filteredEvents.length > 0 ? (
+              filteredEvents.map((event, index) => (
+                <li
+                  key={index}
+                  className={`p-4 rounded-md text-white ${
+                    event.voter === userAddress ? "bg-green-700" : "bg-gray-800"
+                  }`}
+                >
+                  <strong>Voter:</strong> {maskVoter(event.voter)} <br />
+                  <strong>Party:</strong> {partyNames[event.partyID]} <br />
+                  <strong>Transaction:</strong> {event.txHash.slice(0, 10)}...
+                </li>
+              ))
+            ) : (
+              <p className="text-gray-400">No matching results found.</p>
+            )}
           </ul>
         </motion.div>
       </div>
@@ -193,7 +243,7 @@ const EventsPage = () => {
         <ul className="text-white">
           {Object.entries(voteCounts).map(([partyID, count]) => (
             <li key={partyID}>
-              <strong>Party {partyID}:</strong> {count} votes
+              <strong>{partyNames[partyID]}:</strong> {count} votes
             </li>
           ))}
         </ul>

@@ -89,6 +89,7 @@ export const useAuthStore = create((set) => ({
       // Clear token from localStorage
       localStorage.removeItem('auth_token');
       localStorage.removeItem("processedTxs");
+      localStorage.removeItem("voteCounts");
       set({ user: null, isAuthenticated: false, isLoading: false });
       toast.success("Logged out successfully");
     } catch (error) {

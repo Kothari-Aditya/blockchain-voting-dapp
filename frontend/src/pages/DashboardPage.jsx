@@ -43,9 +43,7 @@ const DashboardPage = () => {
       const messageHash = web3.utils.soliditySha3(
         { t: "address", v: voterAddress },
         { t: "uint256", v: selectedPartyId }
-      );
-      console.log(messageHash);
-            
+      );            
       // Sign the prefixed message
       const signature = await web3.eth.personal.sign(
         messageHash,
