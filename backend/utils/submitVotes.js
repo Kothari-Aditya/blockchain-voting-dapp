@@ -8,13 +8,13 @@ import { MerkleProof } from "../models/merkleproof.model.js"; // MongoDB model f
 const N = 1; // Number of votes before submission
 
 // Pinata API key and secret from your Pinata account
-const PINATA_API_KEY = "5fe1dbca9a836bd41cb4";
-const PINATA_API_SECRET = "fe6d0226ce870db5cf97dffdf8f7feb507b76644a23c2161ea80cbe3fdaadfa7";
+const PINATA_API_KEY = your_pinata_key; // Replace with your Pinata API key
+const PINATA_API_SECRET = your_pinata_secret; // Replace with your Pinata API secret
 const PINATA_PIN_URL = "https://api.pinata.cloud/pinning/pinJSONToIPFS"; // Pinata API endpoint
 
 // Create an ethers.js contract instance
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:7545"); // Ganache RPC URL
-const wallet = new ethers.Wallet("0x9add906abb6ef60f46d98dc5adcdab93fa01da08abb139569823e6e0a6619387", provider); // Replace with private key
+const wallet = new ethers.Wallet("your_wallet_private_key", provider); // Replace with private key
 const contract = new ethers.Contract(contractAddress, contractABI, wallet);
 
 export const checkAndSubmitVotes = async () => {
