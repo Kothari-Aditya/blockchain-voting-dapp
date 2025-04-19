@@ -1,12 +1,31 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-export const contractAddress = "0xba45530d73c864C58c1AD5E3601b835fA3422DaD"; // Replace with your deployed contract address
+export const contractAddress = "0x6e4e4728144e3e15831D2AFFf30F9943CE91D306"; // Replace with your deployed contract address
 export const contractABI = [
     {
         "inputs": [],
         "stateMutability": "nonpayable",
         "type": "constructor"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "uint256",
+                "name": "index",
+                "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "bytes32",
+                "name": "merkleRoot",
+                "type": "bytes32"
+            }
+        ],
+        "name": "MerkleRootStored",
+        "type": "event"
     },
     {
         "anonymous": false,
@@ -67,6 +86,26 @@ export const contractABI = [
         "constant": true
     },
     {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "name": "merkleRoots",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
+    },
+    {
         "inputs": [],
         "name": "owner",
         "outputs": [
@@ -109,6 +148,45 @@ export const contractABI = [
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "root",
+                "type": "bytes32"
+            }
+        ],
+        "name": "storeMerkleRoot",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "index",
+                "type": "uint256"
+            }
+        ],
+        "name": "getMerkleRoot",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function",
+        "constant": true
     }
 ];
 

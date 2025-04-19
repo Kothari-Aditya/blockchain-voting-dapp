@@ -9,9 +9,12 @@ contract VotingContract {
     }
 
     mapping(address => bool) public hasVoted;
+    address public owner;
+    bytes32[] public merkleRoots; // Array to store Merkle roots
+
     event VoteSubmitted(address voter, uint256 partyID);
     event VoteSkipped(address indexed voter, string reason);
-    address public owner;
+    event MerkleRootStored(uint256 indexed index, bytes32 merkleRoot);
 
     constructor() {
         owner = msg.sender;
@@ -46,6 +49,19 @@ contract VotingContract {
             // Emit vote event
             emit VoteSubmitted(signer, votes[i].partyID);
         }
+    }
+
+    function storeMerkleRoot(bytes32 root) external returns (uint256) {
+        require(msg.sender == owner, "Only owner can store Merkle roots");
+        merkleRoots.push(root);
+        uint256 index = merkleRoots.length - 1;
+        emit MerkleRootStored(index, root);
+        return index;
+    }
+
+    function getMerkleRoot(uint256 index) external view returns (bytes32) {
+        require(index < merkleRoots.length, "Index out of bounds");
+        return merkleRoots[index];
     }
 
     function prefixed(bytes32 hash) internal pure returns (bytes32) {

@@ -72,7 +72,9 @@ const DashboardPage = () => {
       if (response.ok) {
         alert(`Vote recorded successfully: ${data.message}`);
       } else {
-        alert(`Vote failed: ${data.error}`);
+        // Check if there's a message or other relevant property in the response
+        const errorMessage = data.message || 'An unknown error occurred';
+        alert(`Vote failed: ${errorMessage}`);
       }
     }catch (error) {
       console.error("Error signing vote:", error);

@@ -222,12 +222,14 @@ export const checkAuth = async (req, res) => {
 };
 
 export const vote = async (req, res) => {
+    console.log('Request Body:', req.body);  // Add this log to inspect the incoming request
+
     const { voter, partyId, signature } = req.body;
 
     try {
-        if (!voter || !partyId || !signature) {
+        if (!voter || typeof partyId !== 'number' || !signature) {
             return res.status(400).json({ success: false, message: "Voter Key, party ID, and signature are required" });
-        }
+        }        
 
         // Find the user by roll number
         const user = await User.findOne({ metamaskKey: voter });
