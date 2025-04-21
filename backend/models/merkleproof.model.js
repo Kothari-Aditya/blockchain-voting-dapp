@@ -14,6 +14,10 @@ const MerkleProofSchema = new mongoose.Schema({
     type: Number, // Corresponds to the index of the Merkle root stored on-chain
     required: true,
   },
+  ipfsHash: {
+    type: String,
+    required: true,
+  },
 }, { timestamps: true });
 
 export const MerkleProof = mongoose.model("MerkleProof", MerkleProofSchema);

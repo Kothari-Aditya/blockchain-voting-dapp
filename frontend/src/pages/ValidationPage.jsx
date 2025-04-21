@@ -14,7 +14,7 @@ const parties = [
   { id: 6, name: "National People's Party", img: "/images/NPP-Logo.png" },
 ];
 
-const DashboardPage = () => {
+const ValidationPage = () => {
   const { user, logout } = useAuthStore();
   const [selectedPartyId, setSelectedPartyId] = useState(null);
   const navigate = useNavigate();
@@ -23,64 +23,48 @@ const DashboardPage = () => {
     logout();
   };
 
-  const handleVote = async () => {
-    
-    if (!selectedPartyId) {      
-      alert("Please select a party to vote!");
+  const handleValidate = async () => {
+    if (!selectedPartyId) {
+      alert("Please select a party to validate!");
       return;
     }
     if (!window.ethereum) {
       alert("Metamask is not installed!");
       return;
     }
-
-    try {      
+  
+    try {
       const web3 = new Web3(window.ethereum);
-      const accounts = await web3.eth.requestAccounts(); // Get user account
-      const voterAddress = accounts[0];      
-
-      // Correctly hash the message
-      const messageHash = web3.utils.soliditySha3(
-        { t: "address", v: voterAddress },
-        { t: "uint256", v: selectedPartyId }
-      );            
-      // Sign the prefixed message
-      const signature = await web3.eth.personal.sign(
-        messageHash,
-        voterAddress,
-        ""
-      );      
-
-      console.log("Vote signed:", {
-        voter: voterAddress,
-        partyID: selectedPartyId,
-        signature,
-      });
-
-      // Send vote to the backend
-      const response = await fetch("http://localhost:5000/api/auth/vote", {
+      const accounts = await web3.eth.requestAccounts();
+      const voterAddress = accounts[0];
+  
+      // Send to backend for validation
+      const response = await fetch("http://localhost:5000/api/auth/validate-vote", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           voter: voterAddress,
           partyId: selectedPartyId,
-          signature,
         }),
       });
 
       const data = await response.json();
-      if (response.ok) {
-        alert(`Vote recorded successfully: ${data.message}`);
+  
+      if (data.isValid) {
+        alert(`✅ Vote verified in batch #${data.batchIndex}`);
       } else {
-        // Check if there's a message or other relevant property in the response
-        const errorMessage = data.message || 'An unknown error occurred';
-        alert(`Vote failed: ${errorMessage}`);
+        alert("❌ Vote is not valid or not found in the Merkle tree.");
       }
-    }catch (error) {
-      console.error("Error signing vote:", error);
-      alert("Failed to sign vote. Check console for details.");
+  
+      console.log("Validation result:", data);
+    } catch (error) {
+      console.error("Error validating vote:", error);
+      alert("Something went wrong during validation.");
     }
   };
+  
 
   return (
     <motion.div
@@ -91,7 +75,7 @@ const DashboardPage = () => {
       className="max-w-md w-full mx-auto mt-10 p-8 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl shadow-2xl border border-gray-800"
     >
       <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text">
-        Voting Poll
+        Vote Validation
       </h2>
 
       <div className="space-y-6">
@@ -114,7 +98,7 @@ const DashboardPage = () => {
           transition={{ delay: 0.4 }}
         >
           <h3 className="text-xl font-semibold text-green-400 mb-3">
-            Vote for Your Party
+            Choose the Party you Voted for{" "}
           </h3>
           <div className="space-y-3">
             {parties.map((party) => (
@@ -148,10 +132,10 @@ const DashboardPage = () => {
             ))}
           </div>
           <button
-            onClick={handleVote}
+            onClick={handleValidate}
             className="w-full mt-4 py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
           >
-            Submit Vote
+            Validate Vote
           </button>
         </motion.div>
       </div>
@@ -165,12 +149,12 @@ const DashboardPage = () => {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/validate")}
+          onClick={() => navigate("/")}
           className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white 
 				font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700
 				 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900"
         >
-          Validation
+          Home
         </motion.button>
       </motion.div>
       <motion.div
@@ -210,4 +194,4 @@ const DashboardPage = () => {
     </motion.div>
   );
 };
-export default DashboardPage;
+export default ValidationPage;

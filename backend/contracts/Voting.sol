@@ -13,7 +13,6 @@ contract VotingContract {
     bytes32[] public merkleRoots; // Array to store Merkle roots
 
     event VoteSubmitted(address voter, uint256 partyID);
-    event VoteSkipped(address indexed voter, string reason);
     event MerkleRootStored(uint256 indexed index, bytes32 merkleRoot);
 
     constructor() {
@@ -23,8 +22,6 @@ contract VotingContract {
     function submitVotes(Vote[] memory votes) public {
         for (uint256 i = 0; i < votes.length; i++) {
             if (hasVoted[votes[i].voter]) {
-                // Log or emit an event indicating a duplicate vote (optional)
-                emit VoteSkipped(votes[i].voter, "Already voted");
                 continue; // Skip to the next iteration
             }
 
@@ -39,8 +36,6 @@ contract VotingContract {
             );
 
             if (signer != votes[i].voter) {
-                // Log or emit an event indicating an invalid signature (optional)
-                emit VoteSkipped(votes[i].voter, "Invalid signature");
                 continue; // Skip to the next iteration
             }
 

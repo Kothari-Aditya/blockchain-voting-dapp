@@ -1,9 +1,15 @@
 import { generateTokenAndSetCookie } from "../utils/generateTokenAndSetCookie.js";
 import { User } from "../models/user.model.js";
 import { OTP } from "../models/otp.model.js";
+import { MerkleProof } from "../models/merkleproof.model.js";
 import { generateOTP, maskPhoneNumber, sendOtpViaSms } from "../utils/sendOtp.js";
 import { Vote } from "../models/vote.model.js";
 import { checkAndSubmitVotes } from "../utils/submitVotes.js";
+import { contractABI, contractAddress } from "../contract.config.js";
+import Web3 from "web3";
+import { MerkleTree } from "merkletreejs";
+import { keccak256, solidityPacked } from "ethers";
+import axios from "axios";
 
 /**
  * Send OTP to user's phone number
@@ -192,7 +198,7 @@ export const login = async (req, res) => {
  */
 export const logout = async (req, res) => {
     res.clearCookie("token");
-    
+
     res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
@@ -229,7 +235,7 @@ export const vote = async (req, res) => {
     try {
         if (!voter || typeof partyId !== 'number' || !signature) {
             return res.status(400).json({ success: false, message: "Voter Key, party ID, and signature are required" });
-        }        
+        }
 
         // Find the user by roll number
         const user = await User.findOne({ metamaskKey: voter });
@@ -266,5 +272,82 @@ export const vote = async (req, res) => {
     } catch (error) {
         console.error("Error in vote:", error);
         res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+export const validate = async (req, res) => {
+    try {
+        const { voter, partyId } = req.body;
+
+        if (!voter || typeof partyId !== "number") {
+            return res.status(400).json({ error: "Missing fields." });
+        }
+
+        const web3 = new Web3("http://127.0.0.1:7545");
+        const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+        // Encode the same message that was signed
+        const message = web3.eth.abi.encodeParameters(["address", "uint256"], [voter, partyId]);
+        const messageBuffer = Buffer.from(message.slice(2), "hex");
+
+        const messageHash = keccak256(messageBuffer);
+
+        // Get stored Merkle proof
+        const normalizedVoter = web3.utils.toChecksumAddress(voter); // Normalize if it's an Ethereum address
+        console.log("Voter address: ", normalizedVoter)
+        const storedProof = await MerkleProof.findOne({ voter: normalizedVoter });
+        if (!storedProof) {
+            return res.json({ isValid: false, error: "Proof not found." });
+        }
+
+        const { proof, batchIndex, ipfsHash } = storedProof;
+        console.log("Proof from DB:", proof);
+        console.log("Batch Number from DB:", batchIndex);
+        console.log("IPFS Hash from DB:", ipfsHash);
+
+        // Fetch the Merkle Root data from IPFS
+        const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+        const ipfsData = await axios.get(ipfsUrl);
+        const merkleData = ipfsData.data; // This contains the merkleRoot and validVotes
+        console.log("Merkle Data from IPFS:", merkleData);
+
+        // Get Merkle root from chain (correct function)
+        const rootFromChain = await contract.methods.getMerkleRoot(batchIndex).call();
+        console.log("Root from chain:", rootFromChain);
+
+        // Build Merkle tree leaves using votes from IPFS
+        const validVotes = merkleData.validVotes;
+
+        // Check if the voter's data is included in the validVotes from IPFS
+        const voteExists = validVotes.some(
+            vote =>
+                web3.utils.toChecksumAddress(vote.voter) === normalizedVoter &&
+                Number(vote.partyID) === partyId
+        );
+
+        // If not in the IPFS list, return false
+        if (!voteExists) {
+            return res.json({ isValid: false, error: "Vote not found in IPFS batch." });
+        }
+
+        // Create leaf hashes based on valid votes
+        const validVoteHashes = validVotes.map(vote =>
+            keccak256(solidityPacked(["address", "uint256"], [vote.voter, vote.partyID]))
+        );
+        // Print the leaves for debugging
+        console.log("Merkle Tree Leaves: ", validVoteHashes);
+
+        // Create MerkleTree instance
+        const tree = new MerkleTree(validVoteHashes, keccak256, { sortPairs: true });
+        const root = tree.getHexRoot();
+        console.log("Merkle Root from tree:", root);
+
+        const isValid = root === rootFromChain;
+        console.log("Merkle Tree verification result:", isValid);
+
+        return res.json({ isValid, batchIndex, proof });
+    } catch (err) {
+        console.error("Validation error:", err);
+        res.status(500).json({ error: "Internal server error." });
     }
 };

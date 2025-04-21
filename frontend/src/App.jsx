@@ -5,6 +5,7 @@ import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
 import OTPVerificationPage from "./pages/OTPVerificationPage";
 import DashboardPage from "./pages/DashboardPage";
+import ValidationPage from "./pages/ValidationPage";
 
 import LoadingSpinner from "./components/LoadingSpinner";
 
@@ -64,6 +65,14 @@ function App() {
 					element={
 						<ProtectedRoute>
 							<DashboardPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route
+					path='/validate'
+					element={
+						<ProtectedRoute>
+							<ValidationPage />
 						</ProtectedRoute>
 					}
 				/>

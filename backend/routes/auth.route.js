@@ -6,6 +6,7 @@ import {
     verifyOtp,
     checkAuth,
     vote,
+    validate,
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { contractAddress, contractABI } from "../contract.config.js";
@@ -19,6 +20,7 @@ router.post("/verify-otp", verifyOtp);
 router.post("/login", login);
 router.post("/logout", logout);
 router.post("/vote", vote);
+router.post("/validate-vote", validate);
 router.get("/contract", (req, res) => {
     res.json({ contractAddress, contractABI });
 });

@@ -4,17 +4,19 @@ import { Vote } from "../models/vote.model.js"; // MongoDB model
 import { MerkleTree } from "merkletreejs"; // Merkle Tree library
 import axios from "axios"; // For HTTP requests
 import { MerkleProof } from "../models/merkleproof.model.js"; // MongoDB model for Merkle proofs
+import dotenv from "dotenv"; // For environment variables
+dotenv.config(); // Load environment variables from .env file
 
-const N = 1; // Number of votes before submission
+const N = 2; // Number of votes before submission
 
 // Pinata API key and secret from your Pinata account
-const PINATA_API_KEY = your_pinata_key; // Replace with your Pinata API key
-const PINATA_API_SECRET = your_pinata_secret; // Replace with your Pinata API secret
+const PINATA_API_KEY = process.env.PINATA_API_KEY;
+const PINATA_API_SECRET = process.env.PINATA_API_SECRET;
 const PINATA_PIN_URL = "https://api.pinata.cloud/pinning/pinJSONToIPFS"; // Pinata API endpoint
 
 // Create an ethers.js contract instance
 const provider = new ethers.JsonRpcProvider("http://127.0.0.1:7545"); // Ganache RPC URL
-const wallet = new ethers.Wallet("your_wallet_private_key", provider); // Replace with private key
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider); // Replace with private key
 const contract = new ethers.Contract(contractAddress, contractABI, wallet);
 
 export const checkAndSubmitVotes = async () => {
@@ -99,18 +101,6 @@ export const checkAndSubmitVotes = async () => {
 
                 console.log("Merkle Root stored on-chain at index:", batchIndex);
 
-                // Generate and store Merkle proofs in MongoDB
-                for (const vote of valid) {
-                    const leaf = keccak256(solidityPacked(["address", "uint256"], [vote.voter, vote.partyID]));
-                    const proof = merkleTree.getHexProof(leaf);
-
-                    await MerkleProof.create({
-                        voter: vote.voter,
-                        batchIndex,
-                        proof,
-                    });
-                }
-
                 // Pin Merkle Root to IPFS using Pinata
                 const voteMap = new Map(validVotes.map(v => [v.voter.toLowerCase(), v.signature]));
 
@@ -145,6 +135,19 @@ export const checkAndSubmitVotes = async () => {
 
                 const ipfsHash = response.data.IpfsHash;
                 console.log("Merkle Tree data pinned to IPFS with hash:", ipfsHash);
+
+                // Generate and store Merkle proofs in MongoDB
+                for (const vote of valid) {
+                    const leaf = keccak256(solidityPacked(["address", "uint256"], [vote.voter, vote.partyID]));
+                    const proof = merkleTree.getHexProof(leaf);
+
+                    await MerkleProof.create({
+                        voter: vote.voter,
+                        batchIndex,
+                        proof,
+                        ipfsHash,
+                    });
+                }
 
                 // Log the IPFS URL
                 const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
