@@ -76,12 +76,6 @@ The app will be available at **http://localhost:3000**.
 4. **View Results**: Check the Event Page to see all recorded votes.
 5. **View Analytics**: Explore the Graph Page for voting statistics and trends.
 
-### For Administrators
-1. **Access Admin Panel**: Log in with admin credentials.
-2. **Create Elections**: Set up new voting events with custom parameters.
-3. **Manage Candidates**: Add, remove, or update candidate information.
-4. **Monitor Results**: View real-time analytics and export reports.
-
 ---
 
 ## 📊 Analytics Dashboard
