@@ -2,6 +2,15 @@ import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -13,13 +22,21 @@ const EventsPage = () => {
 
   // Load processed transactions from local storage
   const loadProcessedTxs = () => {
-    const storedTxs = localStorage.getItem("processedTxs");
-    return storedTxs ? new Set(JSON.parse(storedTxs)) : new Set();
+    try {
+      const storedTxs = localStorage.getItem("processedTxs");
+      return storedTxs ? new Set(JSON.parse(storedTxs)) : new Set();
+    } catch {
+      return new Set();
+    }
   };
 
   const loadVoteCounts = () => {
-    const storedCounts = localStorage.getItem("voteCounts");
-    return storedCounts ? JSON.parse(storedCounts) : {};
+    try {
+      const storedCounts = localStorage.getItem("voteCounts");
+      return storedCounts ? JSON.parse(storedCounts) : {};
+    } catch {
+      return {};
+    }
   };
 
   const [processedTxs, setProcessedTxs] = useState(loadProcessedTxs());
@@ -104,7 +121,46 @@ const EventsPage = () => {
       }
     };
 
-    fetchPastEvents();
+    const fetchEventsFromIPFS = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/auth/proofs"); // Endpoint to get all merkle proofs
+        const proofs = await response.json();
+
+        const allVotes = [];
+
+        for (const proof of proofs) {
+          const { ipfsHash } = proof;
+
+          if (!ipfsHash) {
+            console.warn("Skipping proof with missing IPFS hash:", proof);
+            continue;
+          }
+          try {
+            const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${ipfsHash}`;
+            const ipfsData = await fetch(ipfsUrl);
+            const data = await ipfsData.json();
+
+            if (Array.isArray(data.validVotes)) {
+              const votes = data.validVotes.map((vote) => ({
+                voter: vote.voter.toLowerCase(),
+                partyID: vote.partyID.toString(),
+                txHash: ipfsHash, // using ipfs hash in place of tx for uniqueness
+              }));
+              allVotes.push(...votes);
+            }
+          } catch (error) {
+            console.error("Error fetching IPFS data:", error);
+          }
+        }
+
+        updateVoteCounts(allVotes);
+        setEvents(allVotes.reverse()); // Show latest batches first
+      } catch (error) {
+        console.error("Error fetching vote data from IPFS:", error);
+      }
+    };
+
+    fetchEventsFromIPFS();
     setVoteCounts(loadVoteCounts());
 
     const handleVoteSubmitted = (voter, partyID, event) => {
@@ -179,6 +235,11 @@ const EventsPage = () => {
     6: "National People's Party",
   };
 
+  const data = Object.entries(voteCounts).map(([partyID, count]) => ({
+    name: partyNames[partyID],
+    votes: count,
+  }));
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -188,7 +249,7 @@ const EventsPage = () => {
       className="max-w-4xl w-full mx-auto mt-10 p-10 bg-gray-900 bg-opacity-80 backdrop-filter backdrop-blur-lg rounded-xl shadow-2xl border border-gray-800"
     >
       <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-600 text-transparent bg-clip-text">
-        Event List
+        Election Results
       </h2>
 
       <button
@@ -207,9 +268,28 @@ const EventsPage = () => {
         onChange={(e) => setSearchQuery(e.target.value)}
       />
 
+      {/* Vote Count Summary */}
+      <div className="mt-8 p-6 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700">
+        <h3 className="text-2xl font-semibold text-green-400 mb-4">
+          Vote Counts
+        </h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart
+            layout="vertical"
+            data={data}
+            margin={{ top: 5, right: 30, left: 100, bottom: 5 }}
+          >
+            <XAxis type="number" stroke="#ffffff" />
+            <YAxis dataKey="name" type="category" stroke="#ffffff" />
+            <Tooltip cursor={{ fill: "transparent" }} />
+            <Bar dataKey="votes" fill="#10B981" barSize={40} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
       <div className="mt-6 space-y-4">
         <motion.div
-          className="p-6 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700"
+          className="p-6 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700 max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
@@ -233,20 +313,6 @@ const EventsPage = () => {
             )}
           </ul>
         </motion.div>
-      </div>
-
-      {/* Vote Count Summary */}
-      <div className="mt-8 p-6 bg-gray-800 bg-opacity-50 rounded-lg border border-gray-700">
-        <h3 className="text-2xl font-semibold text-green-400 mb-4">
-          Vote Counts
-        </h3>
-        <ul className="text-white">
-          {Object.entries(voteCounts).map(([partyID, count]) => (
-            <li key={partyID}>
-              <strong>{partyNames[partyID]}:</strong> {count} votes
-            </li>
-          ))}
-        </ul>
       </div>
     </motion.div>
   );

@@ -351,3 +351,13 @@ export const validate = async (req, res) => {
         res.status(500).json({ error: "Internal server error." });
     }
 };
+
+export const getProofs = async (req, res) => {
+    try {
+        const proofs = await MerkleProof.find({}, "ipfsHash -_id"); // Only return IPFS hashes
+        const uniqueHashes = Array.from(new Set(proofs.map(p => p.ipfsHash)));
+        res.json(uniqueHashes.map(hash => ({ ipfsHash: hash })));
+    } catch (err) {
+        res.status(500).json({ error: "Failed to fetch proofs." });
+    }
+};

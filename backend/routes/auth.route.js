@@ -7,6 +7,7 @@ import {
     checkAuth,
     vote,
     validate,
+    getProofs,
 } from "../controllers/auth.controller.js";
 import { verifyToken } from "../middleware/verifyToken.js";
 import { contractAddress, contractABI } from "../contract.config.js";
@@ -14,6 +15,7 @@ import { contractAddress, contractABI } from "../contract.config.js";
 const router = express.Router();
 
 router.get("/check-auth", verifyToken, checkAuth);
+router.get("/proofs", getProofs);
 
 router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
